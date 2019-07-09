@@ -22,7 +22,7 @@ left join
 on c.cid=t2.cid
 left join ( select uid, screenName ,url from {$prefix}_users)  as u
 on c.authorId = u.uid
-where type='post'
+where type='post' AND status='publish'
 TEXT;
 
 $successCount = 0;
