@@ -77,7 +77,7 @@ class Links_Action extends Typecho_Widget implements Widget_Interface_Do
 
     public function deleteLink()
     {
-        $lids = $this->request->filter('int')->lid;
+        $lids = $this->request->getArray('lid');
         $deleteCount = 0;
         if ($lids && is_array($lids)) {
             foreach ($lids as $lid) {
