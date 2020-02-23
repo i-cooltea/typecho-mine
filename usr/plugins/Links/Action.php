@@ -11,7 +11,7 @@ class Links_Action extends Typecho_Widget implements Widget_Interface_Do
 			$this->response->goBack();
 		}
 		/** 取出数据 */
-		$link = $this->request->from('name', 'url', 'sort', 'image', 'description', 'user');
+		$link = $this->request->from('name', 'url', 'sort', 'group', 'image', 'description', 'user');
 		$link['order'] = $this->db->fetchObject($this->db->select(array('MAX(order)' => 'maxOrder'))->from($this->prefix.'links'))->maxOrder + 1;
 
 		/** 插入数据 */
@@ -59,7 +59,7 @@ class Links_Action extends Typecho_Widget implements Widget_Interface_Do
 		}
 
 		/** 取出数据 */
-		$link = $this->request->from('lid', 'name', 'sort', 'image', 'url', 'description', 'user');
+		$link = $this->request->from('lid', 'name', 'sort', 'group', 'image', 'url', 'description', 'user');
 
 		/** 更新数据 */
 		$this->db->query($this->db->update($this->prefix.'links')->rows($link)->where('lid = ?', $link['lid']));
@@ -110,7 +110,7 @@ class Links_Action extends Typecho_Widget implements Widget_Interface_Do
 		$this->prefix = $this->db->getPrefix();
 		$this->options = Typecho_Widget::widget('Widget_Options');
 		$this->on($this->request->is('do=insert'))->insertLink();
-		$this->on($this->request->is('do=addhanny'))->addHannysBlog();
+		// $this->on($this->request->is('do=addhanny'))->addHannysBlog();
 		$this->on($this->request->is('do=update'))->updateLink();
 		$this->on($this->request->is('do=delete'))->deleteLink();
 		$this->on($this->request->is('do=sort'))->sortLink();

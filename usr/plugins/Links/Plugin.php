@@ -48,12 +48,13 @@ class Links_Plugin implements Typecho_Plugin_Interface
     public static function activate()
     {
 		$info = Links_Plugin::linksInstall();
-		Helper::addPanel(3, 'Links/manage-links.php', '友情链接', '管理友情链接', 'administrator');
+		Helper::addPanel(3, 'Links/manage-links.php', '链接', '管理链接', 'administrator');
 		Helper::addAction('links-edit', 'Links_Action');
         Typecho_Plugin::factory('Widget_Abstract_Contents')->contentEx = array('Links_Plugin', 'parse');
         Typecho_Plugin::factory('Widget_Abstract_Contents')->excerptEx = array('Links_Plugin', 'parse');
         Typecho_Plugin::factory('Widget_Abstract_Comments')->contentEx = array('Links_Plugin', 'parse');
-		return _t($info);
+
+        return _t($info);
     }
     
     /**
@@ -166,9 +167,13 @@ class Links_Plugin implements Typecho_Plugin_Interface
 		$url = new Typecho_Widget_Helper_Form_Element_Text('url', NULL, "http://", _t('链接地址*'));
 		$form->addInput($url);
 		
-		/** 链接分类 */
-		$sort = new Typecho_Widget_Helper_Form_Element_Text('sort', NULL, NULL, _t('链接分类'), _t('建议以英文字母开头，只包含字母与数字'));
+		/** 链接排序 */
+		$sort = new Typecho_Widget_Helper_Form_Element_Text('sort', NULL, NULL, _t('链接排序'), _t('建议以英文字母开头，只包含字母与数字'));
 		$form->addInput($sort);
+
+		/** 链接分组 */
+		$group = new Typecho_Widget_Helper_Form_Element_Text('group', NULL, NULL, _t('链接分组'), _t('建议以英文字母开头'));
+		$form->addInput($group);
 		
 		/** 链接图片 */
 		$image = new Typecho_Widget_Helper_Form_Element_Text('image', NULL, NULL, _t('链接图片'),  _t('需要以http://开头，留空表示没有链接图片'));
@@ -207,6 +212,7 @@ class Links_Plugin implements Typecho_Plugin_Interface
             $name->value($link['name']);
             $url->value($link['url']);
             $sort->value($link['sort']);
+            $group->value($link['group']);
             $image->value($link['image']);
             $description->value($link['description']);
             $user->value($link['user']);
@@ -238,6 +244,16 @@ class Links_Plugin implements Typecho_Plugin_Interface
         return $form;
 	}
 
+    public static function pageNav($total, $current = 1, $size = 10){
+        $request = Typecho_Request::getInstance();
+        $query = $request->makeUriByRequest('page={page}');
+        $current = $request->page ? $request->page : $current;
+
+        /** 使用盒状分页 */
+        $nav = new Typecho_Widget_Helper_PageNavigator_Box($total, $current, $size, $query);
+        $nav->render(_t('&laquo;'), _t('&raquo;'));
+    }
+
 	public static function LinkExists($lid)
 	{
 		$db = Typecho_Db::get();
@@ -249,7 +265,7 @@ class Links_Plugin implements Typecho_Plugin_Interface
     /**
      * 控制输出格式
      */
-	public static function output_str($pattern=NULL, $links_num=0, $sort=NULL)
+	public static function output_str($pattern=NULL, $byGroup = false, $links_num=0, $sort=NULL)
 	{
 		$options = Typecho_Widget::widget('Widget_Options');
 		if (!isset($options->plugins['activated']['Links'])) {
@@ -267,23 +283,30 @@ class Links_Plugin implements Typecho_Plugin_Interface
 		$options = Typecho_Widget::widget('Widget_Options');
 		$nopic_url = Typecho_Common::url('/usr/plugins/Links/nopic.jpg', $options->siteUrl);
 		$sql = $db->select()->from($prefix.'links');
-		if (!isset($sort) || $sort == "") {
-			$sort = NULL;
-		}
-		if ($sort) {
+		if (!empty($sort)) {
 			$sql = $sql->where('sort=?', $sort);
 		}
-		$sql = $sql->order($prefix.'links.order', Typecho_Db::SORT_ASC);
+		$order = $prefix.'links.order';
+		if ($byGroup) {
+            $order = $prefix.'links.group' .','. $order;
+		}
+		$sql = $sql->order($order);
 		$links_num = intval($links_num);
 		if ($links_num > 0) {
 			$sql = $sql->limit($links_num);
 		}
 		$links = $db->fetchAll($sql);
 		$str = "";
+		$lastGroup = "default";
+
 		foreach ($links as $link) {
 			if ($link['image'] == NULL) {
 				$link['image'] = $nopic_url;
 			}
+            if ($byGroup && $lastGroup != $link['group']) {
+                $lastGroup = $link['group'];
+                $str .= "<li style='width: 100%;'><h1>{$link['group']}</h1></li>";
+            }
 			$str .= str_replace(
 				array('{lid}', '{name}', '{url}', '{sort}', '{title}', '{description}', '{image}', '{user}'),
 				array($link['lid'], $link['name'], $link['url'], $link['sort'], $link['description'], $link['description'], $link['image'], $link['user']),
@@ -294,11 +317,11 @@ class Links_Plugin implements Typecho_Plugin_Interface
 	}
 
 	//输出
-	public static function output($pattern=NULL, $links_num=0, $sort=NULL)
+	public static function output($pattern=NULL, $byGroup = false, $links_num=0, $sort=NULL)
 	{
-		echo Links_Plugin::output_str($pattern, $links_num, $sort);
+		echo Links_Plugin::output_str($pattern, $byGroup, $links_num, $sort);
 	}
-	
+
     /**
      * 解析
      * 

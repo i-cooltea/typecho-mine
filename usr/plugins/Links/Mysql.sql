@@ -2,6 +2,7 @@ CREATE TABLE `typecho_links` (
   `lid` int(10) unsigned NOT NULL auto_increment COMMENT 'links表主键',
   `name` varchar(200) default NULL COMMENT 'links名称',
   `url` varchar(200) default NULL COMMENT 'links网址',
+  `group` varchar(200) default NULL COMMENT 'links分组',
   `sort` varchar(200) default NULL COMMENT 'links分类',
   `image` varchar(200) default NULL COMMENT 'links图片',
   `description` varchar(200) default NULL COMMENT 'links描述',
